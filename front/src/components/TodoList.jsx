@@ -62,12 +62,41 @@ const TodoList = () => {
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
-  const handleCompleteTask = (id) => {
+ /* const handleCompleteTask = (id) => {
     setTasks(
       tasks.map((task) =>
         task.id === id ? { ...task, status: "COMPLETED" } : task
       )
     );
+  };*/ // funcion sin llamar al back
+
+  // funcion llamando al back
+
+  const handleCompleteTask = async(id)=>{
+    try{
+
+      const respuesta = await fetch(`http://localhost:3000/tasks/${id}`,{
+        method:'PATCH',
+        headers:{
+          'Content-type': 'application/json',
+        },
+        body:JSON.stringify({status:'DONE'}),
+    
+        
+      });
+      const data = await respuesta.json();
+      console.log(data.msg); // Mensaje de confirmación
+     // para actualizar el estado de la vista
+      setTasks(
+        tasks.map((task) =>
+          task.id === id ? { ...task, status: "COMPLETED" } : task
+        )
+      );
+
+
+    }catch(error){
+      console.log((error));
+    }
   };
 
   const handleEditTask = (e) => {
