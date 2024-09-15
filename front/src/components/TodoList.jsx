@@ -1,43 +1,44 @@
-
-import  './tasks.css';
-
-
-import React, { useState } from 'react';
-
+import './tasks.css';
+import React, { useEffect, useState } from 'react';
 
 const TodoList = () => {
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Preparar la clase de Nuclio Full Stack Developer",
-      description: "",
-      status: "IN PROGRESS",
-      dueDate: "2024-06-25",
-    },
-    {
-      id: 2,
-      title: "Devolver libros a la biblioteca y recoger nuevos libros sobre ciencia ficción",
-      description: "",
-      status: "IN PROGRESS",
-      dueDate: "2024-07-17",
-    },
-    {
-      id: 3,
-      title: "Preparar maletas y contratar el seguro para el viaje a Marte",
-      description: "",
-      status: "IN PROGRESS",
-      dueDate: "2024-08-03",
-    },
-  ]);
+  const [tasks, setTasks] = useState([]);
 
   const [newTask, setNewTask] = useState({
+    id: 0,
     title: "",
     description: "",
-    dueDate: "",
     status: "NOT_STARTED",
+    dueDate: "",
+    user: 0,
+    createdAt: "",
+    modifiedAt: ""
+
   });
 
   const [taskToEdit, setTaskToEdit] = useState(null);
+
+
+  const fetchTasks = async () => {
+    try {
+      const respuesta = await fetch('http://localhost:3000/tasks');
+      if (respuesta.ok) {
+        const data = await respuesta.json();
+        setTasks(data.tasks);  // aqui tiene que ser data.tasks;
+      } else {
+        console.error('Error fetching tasks:', respuesta.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+
+
+  // Utilizo useffect para que solo se realice una vez cuando se cargen las tareas
+  useEffect(() => {
+    fetchTasks();
+  }, []);// El array vacío asegura que se ejecute solo cuando el componente se monta
+
 
   const handleChange = (e) => {
     setNewTask({
@@ -46,47 +47,78 @@ const TodoList = () => {
     });
   };
 
-  const handleAddTask = (e) => {
+
+  const handleAddTask = async(e) =>{
     e.preventDefault();
-    const newTaskWithId = {
-      ...newTask,
-      id: tasks.length + 1,
-      createdAt: new Date().toISOString(),
-      modifiedAt: new Date().toISOString(),
-    };
-    setTasks([...tasks, newTaskWithId]);
-    setNewTask({ title: "", description: "", dueDate: "", status: "NOT_STARTED" });
-  };
 
-  const handleDeleteTask = (id) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-  };
-
- /* const handleCompleteTask = (id) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, status: "COMPLETED" } : task
-      )
-    );
-  };*/ // funcion sin llamar al back
-
-  // funcion llamando al back
-
-  const handleCompleteTask = async(id)=>{
     try{
 
-      const respuesta = await fetch(`http://localhost:3000/tasks/${id}`,{
-        method:'PATCH',
-        headers:{
+      const respuesta = await fetch(`http://localhost:3000/tasks/`, {
+        method: 'POST',
+        headers: {
           'Content-type': 'application/json',
         },
-        body:JSON.stringify({status:'DONE'}),
+        body: JSON.stringify(newTask),
+
+
+      });
+
+      if(respuesta.ok){
+        const nuevatarea = await respuesta.json();
+        setTasks((tasks)=>[...tasks, nuevatarea]);
+        fetchTasks(); // para actualizar en la vista la tarea y no tener que refrescar
+        setNewTask({ title: "", description: "", dueDate: "", status: "NOT_STARTED" });
+      }else{
+        console.error('Error adding task:', respuesta.statusText);
+      }
+      
+    }catch(error){
+      console.log(error);
+    }
     
-        
+  }
+
+  const handleDeleteTask = async(id)=>{
+
+
+    try{
+
+      const respuesta = await fetch(`http://localhost:3000/tasks/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-type': 'application/json',
+        }
+       
+
+
+      });
+      const data = await respuesta.json();
+      console.log(data.msg);
+
+     
+      setTasks(tasks.filter((task) => task.id !== id));
+    }catch(error){
+      console.log(error);
+    }
+  }
+
+
+
+  const handleCompleteTask = async (id) => {
+    try {
+
+      const respuesta = await fetch(`http://localhost:3000/tasks/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'DONE' }),
+
+
       });
       const data = await respuesta.json();
       console.log(data.msg); // Mensaje de confirmación
-     // para actualizar el estado de la vista
+      // para actualizar el estado de la vista
       setTasks(
         tasks.map((task) =>
           task.id === id ? { ...task, status: "COMPLETED" } : task
@@ -94,11 +126,11 @@ const TodoList = () => {
       );
 
 
-    }catch(error){
+    } catch (error) {
       console.log((error));
     }
   };
-
+/*
   const handleEditTask = (e) => {
     e.preventDefault();
     setTasks(
@@ -109,16 +141,54 @@ const TodoList = () => {
       )
     );
     setTaskToEdit(null);
-  };
+  };*/
 
   const handleSelectTaskToEdit = (task) => {
     setTaskToEdit({ ...task });
   };
 
+  const handleEditTask = async (e) => {
+ e.preventDefault();
 
-  const  handleordenedTask = () =>{
-      const sortTask =[...tasks].sort((a,b)  => new Date(a.dueDate) - new Date(b.dueDate));
-      setTasks(sortTask);
+  
+  
+    try {
+      const respuesta = await fetch(`http://localhost:3000/tasks/${taskToEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskToEdit), // Envía los datos actualizados
+      });
+
+      console.log(taskToEdit.id);
+  
+      if (respuesta.ok) {
+        const data = await respuesta.json();
+        console.log(data.msg);
+  
+        // Actualiza el estado con la tarea editada
+        setTasks(
+          tasks.map((task) =>
+            task.id === taskToEdit.id
+              ? { ...taskToEdit, modifiedAt: new Date().toISOString() }
+              : task
+          )
+        );
+  
+       
+      } else {
+        console.error('Error editing task:', respuesta.statusText);
+      }
+    } catch (error) {
+      console.error('Error editing task:', error);
+    }
+  };
+
+
+  const handleordenedTask = () => {
+    const sortTask = [...tasks].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    setTasks(sortTask);
   };
 
   return (
@@ -177,18 +247,24 @@ const TodoList = () => {
           required
         />
         <br />
-        <button type="submit">{taskToEdit ? "Guardar cambios" : "Insertar"}</button>
-        
-              <button onClick={() => handleordenedTask()}>Ordenar Tareas </button>
-       
+      <button type="submit">{taskToEdit ? "Guardar cambios" : "Insertar"}</button> 
+
+      
+
         {taskToEdit && <button type="button" onClick={() => setTaskToEdit(null)}>Cancelar</button>}
+
+        <button onClick={() => handleordenedTask()}>Ordenar Tareas </button>
       </form>
 
       <h2>Tareas</h2>
       <div className="grid" id="task-list">
-        {tasks.map((task) => (
+        {(tasks === null || tasks?.length === 0) && <p>  No hay tareas disponibles</p>}
+
+        {tasks?.map((task) => (
           <div key={task.id}>
             <p>{task.title}</p>
+            <p>{task.description}</p>
+            <p>{task.createdAt}</p>
             <p>
               <span>{task.status}</span> Fecha Límite: {task.dueDate}
             </p>
@@ -203,9 +279,11 @@ const TodoList = () => {
             <p>
               <button onClick={() => handleDeleteTask(task.id)}>Eliminar</button>
             </p>
-         
+
           </div>
-        ))}
+        )
+
+        )}
       </div>
     </div>
   );
@@ -215,12 +293,12 @@ export default TodoList;
 
 
 
-    
 
 
 
- 
-  
+
+
+
 
 
 
