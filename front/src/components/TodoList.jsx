@@ -96,7 +96,7 @@ const TodoList = () => {
       console.log(data.msg);
 
      
-      setTasks(tasks.filter((task) => task.id !== id));
+         setTasks(tasks.filter((task) => task.id !== id));
     }catch(error){
       console.log(error);
     }
@@ -144,7 +144,7 @@ const TodoList = () => {
   };*/
 
   const handleSelectTaskToEdit = (task) => {
-    setTaskToEdit({ ...task });
+    setTaskToEdit({ ...task });  // actualizamos la vista en el formulario paso variable taskToEdit 
   };
 
   const handleEditTask = async (e) => {

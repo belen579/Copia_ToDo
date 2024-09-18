@@ -3,13 +3,6 @@
 
 
 
-const tasks = [
-    { id: 1, title: 'Comprar Libro English', description: 'Oxford English C1', status: 'IN_PROGRESS', dueDate: '2024-04-01', user: 1, createdAt: '2023-09-01', modifiedAt: '2023-09-02' },
-    { id: 2, title: 'Comprar ropa', description: 'Stradivarius', status: 'IN_PROGRESS', dueDate: '2024-04-01', user: 1, createdAt: '2023-09-01', modifiedAt: '2023-09-02' },
-    { id: 3, title: 'Preparar la clase', description: 'Preparar la clase nuclio Digital School', status: 'NOT_STARTED', dueDate: '2024-04-01', user: 1, createdAt: '2023-09-01', modifiedAt: '2023-09-02' },
-    { id: 4, title: 'Task 4', description: 'Tarea 4', status: 'IN_PROGRESS', dueDate: '2024-04-01', user: 1, createdAt: '2023-09-01', modifiedAt: '2023-09-02' },
-    { id: 5, title: 'Task 5', description: 'Tarea 5', status: 'IN_PROGRESS', dueDate: '2024-04-01', user: 2, createdAt: '2023-09-01', modifiedAt: '2023-09-02' },
-];
 
 const users = [
     { id: 1, firstname: "Jordi", lastname: "Galobart", email: "test@example.com", password: "correctpassword" },
@@ -18,9 +11,26 @@ const users = [
 
 ]
 
+
+const Task = require("../models/task");
+
+
+function createtask(req,res){
+    console.log("REQ.BODY", req.body);
+    Task.create({   title: 'Comprar Libro English', description: 'Oxford English C1', status: 'IN_PROGRESS', dueDate: '2024-04-01', user: 1, createdAt: '2023-09-01', modifiedAt: '2023-09-02'  })
+    .then(taskDoc => console.log(`task create worked well: ${taskDoc}`))
+    .catch(error =>
+        
+      console.log(`Creating a new task went wrong! Try again 😞 ${err}`)
+    );
+
+    return
+  }
+
+
 const getdetails = (req, res) => {
     const taskId = parseInt(req.params.id, 10);
-    const task = tasks.find(task => task.id === taskId);
+    const task = Task.find(task => task.id === taskId);
 
     console.log(task);
 
@@ -37,206 +47,251 @@ const getdetails = (req, res) => {
 }
 
 
-const updatetask = (req, res) => {
-    const taskid = parseInt(req.params.id, 10);
-    const task = tasks.find(task => task.id === taskid);
+async function updatetask (req, res)  {
+    const taskId = req.params.id;
 
-    if (!task) {
-        return res.status(404).json({ msg: "Task not found" });
+    // Verificar si el ID es válido
+    if (!taskId) {
+        console.log("este es el id " + taskID);
+        return res.status(400).json({ msg: "You missed parameter 'id'" });
     }
 
-    if (task.user == -1) {
-        return res.status(403).json({ msg: "Forbidden" });
-    }
-    const { title, status, description, dueDate } = req.body;
+    try {
+        // Buscar la tarea en la base de datos
+        const task = await Task.findById(taskId);
+        console.log("Este es el nombre de la tarea " + task.title);
 
-    let missingParams = [];
-    if (!title) missingParams.push("title");
-    if (missingParams.length > 0) {
-        return res.status(400).json({ msg: `You missed parameters: 'id' or 'title'` });
-    }
+        // Verificar si la tarea existe
+        if (!task) {
+            return res.status(404).json({ msg: "Task not found" });
+        }
 
-    if (title) task.title = title;
-    if (status !== undefined) task.status = status;
-    if (description) task.description = description;
-    if (dueDate) task.dueDate = dueDate;
+      
 
-    task.modifiedAt = new Date().toISOString();
+        // Extraer los datos del cuerpo de la solicitud
+        const { title,  description, dueDate } = req.body;
 
-
-    return res.status(200).json({ msg: "Task updated" });
-}
-
-const taskController = {
-    incompleteTasks: (req, res) => {
-        res.status(200).json({
-            tasks: tasks.filter(task => task.status !== 'DONE')
-        }); //importante!!  para que no envie los datos con un array directamente hay que ponerle la variable delante  tasks:
-    },
-
-
-
-
-
-    getAlltask: (req, res) => {
-        res.status(200).json({ tasks: tasks });
-    },
-
-    addNewTask: (req, res) => {
-        const title = req.body.title;
-        const description = req.body.description;
-        const dueDate = req.body.dueDate;
-
-        let faltanparametros = [];// Array de los parametros buscar si están todos los parámetros o lanzar el mensaje
-        // verificamos si el parametros obligatorios está presente
+        // Verificar si el título está presente
         if (!title) {
-            faltanparametros.push("title");
+            return res.status(400).json({ msg: "You missed parameter: 'title'" });
         }
 
-        if (faltanparametros.length > 0) {
-            return res.status(400).json({ "msg": "You missed parameter 'title'" });
-        }
+        // Actualizar los campos de la tarea
+        if (title) task.title = title;
+      
+        if (description) task.description = description;
+        if (dueDate) task.dueDate = dueDate;
 
-        nuevoidtask = tasks.length + 1;
+        // Actualizar la fecha de modificación
+        task.modifiedAt = new Date();
 
-        const newtask = {
-            id: nuevoidtask,
+        // Guardar los cambios en la base de datos
+        const updatedtask = await task.save();
+        getTasks();
+
+        // Responder con éxito
+        return res.status(200).json({ msg: "Task updated", task: updatedtask });
+
+    } catch (error) {
+        console.error("Error updating task:", error);
+        return res.status(500).json({ msg: "Error updating task", updatedtask });
+    }
+}
+ 
+   
+
+
+async function addNewTask(req, res) {
+    const { title, description, dueDate } = req.body;
+
+    // Verificar si los parámetros obligatorios están presentes
+    if (!title) {
+        return res.status(400).json({ msg: "Missing parameter: title" });
+    }
+
+    try {
+        const newTask = new Task({
             title,
             description: description || "",
             status: 'NOT_STARTED',
             dueDate,
             user: req.user ? req.user.id : null,
-            createdAt: new Date().toISOString(),
-            modifiedAt: new Date().toISOString(),
-        }
+            createdAt: new Date(),
+            modifiedAt: new Date(),
+        });
 
-        tasks.push(newtask);
-        return res.status(201).json({ msg: "Task created", id: nuevoidtask })
-    },
+        // Guardar la tarea en la base de datos
+        const savedTask = await newTask.save();
 
-    deleteTaskbyId: (req, res) => {
+        // Responder con el éxito
+        return res.status(201).json({ msg: "Task created", id: savedTask._id });
+    } catch (error) {
+        // Manejo de errores
+        console.error("Error creating task:", error);
+        return res.status(500).json({ msg: "Error creating task", error });
+    }
+}
 
-        const taskId = parseInt(req.params.id, 10);
-        console.log("delete task id " + taskId);
+async function deleteTaskbyId(req, res) {
+    const taskId = req.params.id;
 
-        if (isNaN(taskId)) {
-            res.status(400).json({ msg: 'You missed parameter id' });
-        }
+    if (!taskId) {
+        return res.status(400).json({ msg: 'You missed parameter id' });
+    }
 
-        const taskIndex = tasks.findIndex(task => task.id === taskId);
+    try {
+        // Buscar la tarea en la base de datos
+        const task = await Task.findByIdAndDelete(taskId);
 
-        if (taskIndex === -1) {
+        if (!task) {
             return res.status(404).json({ msg: 'Task not found' });
         }
 
-        const task = tasks[taskIndex];
-        console.log("task " + task);
+       
 
-        if (!task.user) {
-            return res.status(403).json({ msg: 'Forbidden' });
-        }
+     
+        return res.status(200).json({ msg: 'Task removed successfully' });
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        return res.status(500).json({ msg: 'Error deleting task', error });
+    }
+}
 
+async function patchtask(req, res) {
+    const taskId = req.params.id;
 
+    if (!taskId) {
+        return res.status(400).json({ msg: "You missed parameter 'id'" });
+    }
 
-
-        tasks.splice(taskIndex, 1);
-        res.status(200).json({ msg: "Task removed successfully" });
-
-    },
-
-    patchtask: (req, res) => {
-        const taskId = parseInt(req.params.id, 10);
-
-        console.log("taskid" + taskId);
-
-        if (!taskId) {
-            return res.status(400).json({ msg: "You missed parameter 'id'" });
-        }
-
-        const task = tasks.find(task => task.id === taskId);
+    try {
+      
+        const task = await Task.findById(taskId);
 
         if (!task) {
             return res.status(404).json({ msg: "Task not found" });
         }
 
-        // Verifica que el usuario autenticado tenga permiso para modificar la tarea
-        if (taskId == 5) {
+     
+        if (task.user.toString() !== (req.user ? req.user.id : null)) {
             return res.status(403).json({ msg: "Forbidden" });
         }
 
+   
         task.status = 'DONE';
-        task.modifiedAt = new Date().toISOString();
+        task.modifiedAt = new Date();
 
+  
+        await task.save();
         return res.status(200).json({ msg: "Task marked as completed" });
-    },
+    } catch (error) {
+        console.error('Error updating task:', error);
+        return res.status(500).json({ msg: 'Error updating task', error });
+    }
+}
 
-    getinformationuser(req, res) {
+async function incompleteTasks(req, res) {
+    try {
+        // Obtener las tareas que no están marcadas como 'DONE'
+        const tasks = await Task.find({ status: { $ne: 'DONE' } });
+
+        // Responder con las tareas incompletas
+        res.status(200).json({ tasks });
+    } catch (error) {
+        console.error('Error fetching incomplete tasks:', error);
+        res.status(500).json({ msg: 'Error fetching incomplete tasks', error });
+    }
+}
 
 
+async function getTasks(req, res){
+    try {
+        // Obtener las tareas que no están marcadas como 'DONE'
+        const tasks = await Task.find({ status: { $ne: 'DONE' } });
 
-        const user = users[0];
+        // Responder con las tareas incompletas
+        res.status(200).json({ tasks });
+    } catch (error) {
+        console.error('Error fetching incomplete tasks:', error);
+        res.status(500).json({ msg: 'Error fetching incomplete tasks', error });
+    }
+/*
+    Task.find()
+    .then(
+            (tasksDocs)=>{
+                console.log("Found this: ", tasksDocs);
+                res.send(tasksDocs);
+            }
+    ).catch((err)=>console.log("Error while getting the tasks:", err));*/
+}
 
+async function getinformationuser(req, res) {
+    try {
+        const userId = req.user ? req.user.id : null;
+        if (!userId) {
+            return res.status(400).json({ msg: 'User not authenticated' });
+        }
 
+        // Buscar el usuario en la base de datos
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
 
         res.status(200).json({
             email: user.email,
             firstname: user.firstname,
             lastname: user.lastname
         });
-    },
-    loginuser(req, res) {
-        const { email, password } = req.body;
+    } catch (error) {
+        console.error('Error fetching user information:', error);
+        return res.status(500).json({ msg: 'Error fetching user information', error });
+    }
+}
 
+async function loginuser(req, res) {
+    const { email, password } = req.body;
 
-        if (!email) {
-            return res.status(400).json({ msg: "Missing parameter: 'email'" });
-        }
+    if (!email || !password) {
+        return res.status(400).json({ msg: "Missing parameters: 'email' or 'password'" });
+    }
 
-
-        const user = users.find(user => user.email === email);
-
+    try {
+        // Buscar el usuario en la base de datos
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(404).json({ msg: "User not found" });
         }
 
+        // Comparar la contraseña (usa bcrypt.compare en lugar de comparación directa)
+        const passwordValid = (password === user.password); // Cambia esto a bcrypt.compare(password, user.password)
 
-
-        const passwordvalida = (password === user.password);
-
-        if (!passwordvalida) {
-
+        if (!passwordValid) {
             return res.status(403).json({ msg: "Forbidden" });
-
         }
 
-        if (passwordvalida && user) {
-            return res.status(200).json({ msg: "Login successful" });
-
-        }
-
-
-
-
-
-
-
-
-
-
-
-
+        // Autenticación exitosa
+        return res.status(200).json({ msg: "Login successful" });
+    } catch (error) {
+        console.error('Error logging in:', error);
+        return res.status(500).json({ msg: 'Error logging in', error });
     }
-
-};
-
-
-
+}
 
 module.exports = {
-    taskController,
+   
     getdetails,
-    updatetask
+    updatetask,
+    createtask,
+    addNewTask,
+    getTasks,
+    patchtask,
+    deleteTaskbyId,
+    getinformationuser,
+    loginuser,
+    incompleteTasks
 
 }
 
