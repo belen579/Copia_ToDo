@@ -128,7 +128,7 @@ async function addNewTask(req, res) {
         console.error("Error creating task:", error);
         return res.status(500).json({ msg: "Error creating task", error });
     }
-}
+}//
 
 async function deleteTaskbyId(req, res) {
     const taskId = req.params.id;

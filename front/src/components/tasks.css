@@ -49,8 +49,7 @@ input{
     width: 100%;
     margin-bottom: 20px;
    
-  /*  display: inline-block;
-    display: flex;*/
+ 
 
 }
 
@@ -72,12 +71,12 @@ form {
     font-size: 1.4;
     text-transform: uppercase;
  
-    color: white; /* Color del texto */
-    margin-top: 15px ; /* Relleno */
-    text-align: center; /* Alineación del texto */
-    text-decoration: none; /* Sin subrayado */
-    display: inline-block; /* Display inline-block */
-    font-size: 16px; /* Tamaño de la fuente */
+    color: white; 
+    margin-top: 15px ; 
+    text-align: center;
+    text-decoration: none; 
+    display: inline-block; 
+    font-size: 16px; 
 
 }
 
