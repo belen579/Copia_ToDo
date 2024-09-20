@@ -1,5 +1,5 @@
 const express= require('express')
-const {taskController, getdetails, updatetask, addNewTask, deleteTaskbyId, patchtask, getinformationuser,loginuser,incompleteTasks,getTasks } = require('../controllers/tasksController');
+const {taskController, getdetails, updatetask, addNewTask, deleteTaskbyId, patchtask, getinformationuser,loginuser,incompleteTasks,getTasks,patchtask2 } = require('../controllers/tasksController');
 
 
 
@@ -20,6 +20,7 @@ router.post('/tasks/', addNewTask);
 router.delete('/tasks/:id', deleteTaskbyId); 
 
 router.patch('/tasks/:id', patchtask);
+router.patch('/tarea/:id', patchtask2);
 
 
 router.get('/user', getinformationuser);

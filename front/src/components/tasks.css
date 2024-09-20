@@ -14,12 +14,17 @@ h2 {
   }
 
 h1 {
-    color: white;
-    background-color: #6667ab;
+    color: rgb(250, 250, 250);
+    background-color: #ad86c2;
     text-align: center; /*para que se ajuste a la posición central*/
     font-size: 2rem;
     font-weight: bold;
     padding: 1rem;
+    font-family: 'Montserrat', sans-serif;
+    border-radius: 0;
+    border-radius: 8px;
+    display: inline-block; 
+    
   }
 
 
@@ -61,7 +66,7 @@ form {
     margin: 10px;
     display: flex;
     justify-content: space-around;
-    background-color: #6667AB;
+    background-color: #56a7bb;
     width: 100%;
     padding: 1rem;
     font-size: 1.4;
@@ -93,10 +98,17 @@ form {
 div {
     text-align: center;
     margin: 10px;
-    border: 1px solid #6667ab;
+    
     padding: 1rem;
+    transition: transform 0.2s ease;
+   
+  }
 
  
+  
+  div:hover {
+    transform: translateY(-5px); /* Mueve el div hacia arriba al hacer hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Añade una sombra sutil */
   }
 
 
@@ -106,9 +118,11 @@ div.grid{
     display: grid;
     grid-template-columns: 1fr;
   
-    border: 0;
+  
   
     padding: 0;
+
+  
    
 }
 
@@ -122,11 +136,18 @@ a.remove{
 }
 
 span{
-    background-color:#fcb700 ;
-    color:white;
-    border-radius: 4px;
+ 
+    color:rgb(58, 207, 220);
+  
     padding: 4px 8px ;
+    font-weight: 'bold';
+    font-size: 1.2em;
 
+}
+
+
+button{
+   margin: 2px;
 }
 
 p[href="fechas"]{

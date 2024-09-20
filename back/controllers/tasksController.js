@@ -50,46 +50,44 @@ const getdetails = (req, res) => {
 async function updatetask (req, res)  {
     const taskId = req.params.id;
 
-    // Verificar si el ID es válido
+  
     if (!taskId) {
-        console.log("este es el id " + taskID);
+        console.log("este es el id " + taskId);
         return res.status(400).json({ msg: "You missed parameter 'id'" });
     }
 
     try {
-        // Buscar la tarea en la base de datos
+   
         const task = await Task.findById(taskId);
         console.log("Este es el nombre de la tarea " + task.title);
 
-        // Verificar si la tarea existe
         if (!task) {
             return res.status(404).json({ msg: "Task not found" });
         }
 
       
 
-        // Extraer los datos del cuerpo de la solicitud
+    
         const { title,  description, dueDate } = req.body;
 
-        // Verificar si el título está presente
+  
         if (!title) {
             return res.status(400).json({ msg: "You missed parameter: 'title'" });
         }
 
-        // Actualizar los campos de la tarea
+   
         if (title) task.title = title;
       
         if (description) task.description = description;
         if (dueDate) task.dueDate = dueDate;
 
-        // Actualizar la fecha de modificación
         task.modifiedAt = new Date();
 
-        // Guardar los cambios en la base de datos
+   
         const updatedtask = await task.save();
-        getTasks();
+     
 
-        // Responder con éxito
+ 
         return res.status(200).json({ msg: "Task updated", task: updatedtask });
 
     } catch (error) {
@@ -157,6 +155,34 @@ async function deleteTaskbyId(req, res) {
     }
 }
 
+async function patchtask2(req, res) {
+    const taskId = req.params.id;
+
+    if (!taskId) {
+        return res.status(400).json({ msg: "You missed parameter 'id'" });
+    }
+
+    try {
+      
+        const task = await Task.findById(taskId);
+
+        if (!task) {
+            return res.status(404).json({ msg: "Task not found" });
+        }
+
+   
+        task.status = 'NOT_STARTED';
+        task.modifiedAt = new Date();
+
+  
+        await task.save();
+        return res.status(200).json({ msg: "Task marked as NOT_STARTED" });
+    } catch (error) {
+        console.error('Error updating task:', error);
+        return res.status(500).json({ msg: 'Error updating task', error });
+    }
+}
+
 async function patchtask(req, res) {
     const taskId = req.params.id;
 
@@ -173,9 +199,9 @@ async function patchtask(req, res) {
         }
 
      
-        if (task.user.toString() !== (req.user ? req.user.id : null)) {
+     /*   if (task.user.toString() !== (req.user ? req.user.id : null)) {
             return res.status(403).json({ msg: "Forbidden" });
-        }
+        }*/
 
    
         task.status = 'DONE';
@@ -207,7 +233,9 @@ async function incompleteTasks(req, res) {
 async function getTasks(req, res){
     try {
         // Obtener las tareas que no están marcadas como 'DONE'
-        const tasks = await Task.find({ status: { $ne: 'DONE' } });
+    /*   const tasks = await Task.find({ status: { $ne: 'DONE' } });*/
+
+        const tasks = await Task.find();
 
         // Responder con las tareas incompletas
         res.status(200).json({ tasks });
@@ -215,14 +243,7 @@ async function getTasks(req, res){
         console.error('Error fetching incomplete tasks:', error);
         res.status(500).json({ msg: 'Error fetching incomplete tasks', error });
     }
-/*
-    Task.find()
-    .then(
-            (tasksDocs)=>{
-                console.log("Found this: ", tasksDocs);
-                res.send(tasksDocs);
-            }
-    ).catch((err)=>console.log("Error while getting the tasks:", err));*/
+
 }
 
 async function getinformationuser(req, res) {
@@ -265,8 +286,7 @@ async function loginuser(req, res) {
             return res.status(404).json({ msg: "User not found" });
         }
 
-        // Comparar la contraseña (usa bcrypt.compare en lugar de comparación directa)
-        const passwordValid = (password === user.password); // Cambia esto a bcrypt.compare(password, user.password)
+        const passwordValid = (password === user.password); 
 
         if (!passwordValid) {
             return res.status(403).json({ msg: "Forbidden" });
@@ -291,7 +311,8 @@ module.exports = {
     deleteTaskbyId,
     getinformationuser,
     loginuser,
-    incompleteTasks
+    incompleteTasks,
+    patchtask2
 
 }
 
